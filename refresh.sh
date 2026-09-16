@@ -5,7 +5,6 @@
 # stays on the wall permanently and the count is monotonic across sandbox rebuilds.
 set -u
 D=/home/sandbox/grokbot-wall
-TOKEN=$(cat "$D/.vercel-token")
 CACHE="$D/cache"
 RX='https?://(x|twitter)\.com/[A-Za-z0-9_]+/status/[0-9]+'
 mkdir -p "$CACHE/oembed" "$CACHE/synd" "$CACHE/fx" /tmp/site
@@ -63,19 +62,6 @@ done
 python3 "$D/build_wall.py"
 cp /downloads/grokbot-wall.html /tmp/site/index.html
 
-# --- 5. deploy ---
-SHA=$(sha1sum /tmp/site/index.html | cut -d' ' -f1); SIZE=$(wc -c < /tmp/site/index.html)
-curl -s -m 30 -X POST "https://api.vercel.com/v2/files" -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/octet-stream" -H "x-vercel-digest: $SHA" --data-binary @/tmp/site/index.html > /dev/null
-curl -s -m 45 -X POST "https://api.vercel.com/v13/deployments?forceNew=1" -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" -d "{\"name\":\"grokbot-wall\",\"files\":[{\"file\":\"index.html\",\"sha\":\"$SHA\",\"size\":$SIZE}],\"projectSettings\":{\"framework\":null}}" > /tmp/deploy.json
-DPLID=$(jq -r '.id // empty' /tmp/deploy.json)
-if [ -n "$DPLID" ]; then
-  for A in grokbot-wall.vercel.app grokbot-wall-rvaraghav-5036s-projects.vercel.app; do
-    curl -s -m 20 -X POST "https://api.vercel.com/v2/deployments/$DPLID/aliases" -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" -d "{\"alias\":\"$A\"}" > /dev/null
-  done
-fi
-STATE=$(jq -r '.readyState // .error.code // "?"' /tmp/deploy.json)
-sleep 5
-CODE=$(curl -sL -m 20 "https://grokbot-wall.vercel.app" -o /tmp/site_check.html -w "%{http_code}")
-CARDS=$(grep -c 'class="card"' /tmp/site_check.html || true)
-TITLE=$(grep -o '<title>[^<]*' /tmp/site_check.html | head -1)
-echo "urls_harvested=$URLS deploy_state=$STATE verify_http=$CODE cards=$CARDS title='$TITLE'"
+# Deployment is intentionally separate so the long harvest/build phase never holds a credential.
+CARDS=$(grep -o 'class="card"' /downloads/grokbot-wall.html | wc -l)
+echo "urls_harvested=$URLS build_cards=$CARDS"
