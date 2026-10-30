@@ -31,6 +31,9 @@ done
 sort -u /tmp/gd_pages.txt | grep -vE '^/use-cases/([0-9]+)?/$' > /tmp/gd_case_pages.txt
 while read -r p; do curl -sL -m 15 "https://grokbot.dev$p"; done < /tmp/gd_case_pages.txt | grep -oE "$RX" > /tmp/urls_cases.txt || true
 
+# --- 1d. harvest: freshness supplement (catalogue-independent discovery) ---
+python3 "$D/fresh_harvest.py" || true
+
 cat /tmp/urls_seed.txt /tmp/urls_discover.txt /tmp/urls_cases.txt 2>/dev/null | sort -u > /tmp/urls.txt
 URLS=$(wc -l < /tmp/urls.txt)
 
