@@ -55,7 +55,7 @@ def synd(tid):
         '-H', 'User-Agent: Mozilla/5.0'], capture_output=True, text=True).stdout
     try:
         d = json.loads(out)
-        return d if d.get('__typename') == 'Tweet' and 'text' in d else None
+        return d if d.get('__typename') == 'Tweet' and 'text' in d and str(d.get('id_str')) == str(tid) else None
     except Exception:
         return None
 

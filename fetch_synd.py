@@ -17,6 +17,7 @@ out = subprocess.run(['curl','-s','-m','15',f'https://cdn.syndication.twimg.com/
 try:
     d = json.loads(out)
     if d.get('__typename') != 'Tweet' or 'text' not in d: sys.exit(1)
+    if str(d.get('id_str')) != str(tid): sys.exit(1)
     CACHE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'cache', 'synd')
     os.makedirs(CACHE, exist_ok=True)
     json.dump(d, open(os.path.join(CACHE, f'{tid}.json'),'w'))
