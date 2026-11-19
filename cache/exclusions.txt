@@ -1,0 +1,4 @@
+# Status IDs that repeatedly failed syndication verification (deleted/unavailable).
+# Excluded from re-verification; revisit only on a new affirmative source signal.
+2108718057220653374
+2112850901161631899
