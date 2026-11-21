@@ -20,6 +20,12 @@ def parse_oembed(path):
 
 def esc(s): return html.escape(s or '', quote=True)
 
+def esc_norm(s):
+    """Escape exactly once: syndication text arrives with HTML entities
+    pre-encoded ('&amp;'), so normalize entities to chars first, then escape.
+    Used only for entity-span gap segments (indices refer to the encoded form)."""
+    return html.escape(html.unescape(s or ''), quote=True)
+
 RX_URL = re.compile(r'https?://[^\s<>"]+')
 RX_MENTION = re.compile(r'(?<![\w@])@([A-Za-z0-9_]{1,15})\b')
 RX_HASH = re.compile(r'(?<![\w#])#([A-Za-z0-9_]+)')
@@ -67,8 +73,8 @@ def link_entities(text, entities):
     for a, b, rep in spans:
         if a < cur:  # overlapping span (e.g. media + url same range)
             continue
-        out.append(esc(text[cur:a])); out.append(rep); cur = b
-    out.append(esc(text[cur:]))
+        out.append(esc_norm(text[cur:a])); out.append(rep); cur = b
+    out.append(esc_norm(text[cur:]))
     return ''.join(out).replace('\n', '<br>')
 
 def media_html(md):
@@ -139,7 +145,7 @@ def card_from_synd(s, fallback):
     date = fmt_date(s.get('created_at',''))
     favs = s.get('favorite_count') or 0
     url = f'https://x.com/{sn}/status/{s.get("id_str", fallback["id"])}'
-    search = ' '.join(((fx_text or s.get('text','')) + ' ' + name + ' @' + sn).lower().split())
+    search = ' '.join((html.unescape(fx_text or s.get('text','')) + ' ' + name + ' @' + sn).lower().split())
     return url, search, f'''<div class="tweet">
   <div class="thead">
     <img class="av" src="{esc(av)}" loading="lazy" alt="">
